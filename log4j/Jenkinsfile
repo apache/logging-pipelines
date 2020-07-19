@@ -45,11 +45,13 @@ pipeline {
     agent none
     stages {
         stage('Ensure Latest') {
-            // https://issues.jenkins-ci.org/browse/JENKINS-43353
-            script {
-                def buildNumber = BUILD_NUMBER as int
-                if (buildNumber > 1) milestone(buildNumber - 1)
-                milestone(buildNumber)
+            steps {
+                // https://issues.jenkins-ci.org/browse/JENKINS-43353
+                script {
+                    def buildNumber = BUILD_NUMBER as int
+                    if (buildNumber > 1) milestone(buildNumber - 1)
+                    milestone(buildNumber)
+                }
             }
         }
         stage('Continuous Integration') {
