@@ -112,6 +112,13 @@ pipeline {
             }
         }
         stage('Deploy') {
+            // https://www.jenkins.io/doc/book/pipeline/syntax/#when
+            when {
+                anyOf {
+                    branch 'master'
+                    branch 'release-2.x'
+                }
+            }
             steps {
                 sh 'mvn --toolchains toolchains-jenkins-ubuntu.xml -Djenkins deploy'
             }
