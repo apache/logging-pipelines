@@ -44,6 +44,14 @@ pipeline {
     // (such as slackSend, mail, etc.)
     agent none
     stages {
+        stage('Ensure Latest') {
+            // https://issues.jenkins-ci.org/browse/JENKINS-43353
+            script {
+                def buildNumber = BUILD_NUMBER as int
+                if (buildNumber > 1) milestone(buildNumber - 1)
+                milestone(buildNumber)
+            }
+        }
         stage('Continuous Integration') {
             // https://jenkins.io/doc/book/pipeline/syntax/#parallel
             parallel {
@@ -64,12 +72,6 @@ pipeline {
                         LANG = 'C.UTF-8'
                     }
                     steps {
-                        // https://issues.jenkins-ci.org/browse/JENKINS-43353
-                        script {
-                            def buildNumber = BUILD_NUMBER as int
-                            if (buildNumber > 1) milestone(buildNumber - 1)
-                            milestone(buildNumber)
-                        }
                         // build, test, and deploy snapshots
                         // note that the jenkins system property is set here to activate certain pom properties in
                         // some log4j modules that compile against system jars (e.g., log4j-jmx-gui)
