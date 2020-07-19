@@ -31,9 +31,19 @@ pipeline {
         buildDiscarder logRotator(numToKeepStr: '25')
         timeout time: 1, unit: 'HOURS'
     }
+    triggers {
+        // TODO: this can be removed once gitbox webhooks are re-enabled
+        pollSCM '@hourly'
+    }
     stages {
         stage('Build') {
             steps {
+                // https://issues.jenkins-ci.org/browse/JENKINS-43353
+                script {
+                    def buildNumber = BUILD_NUMBER as int
+                    if (buildNumber > 1) milestone(buildNumber - 1)
+                    milestone(buildNumber)
+                }
                 sh '''
                 mvn -Pdevelopment site:site
                 mvn -Pdevelopment install
