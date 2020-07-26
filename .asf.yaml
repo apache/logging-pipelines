@@ -4,8 +4,7 @@ notifications:
   pullrequests: dev@logging.apache.org
   jira_options: link label
 github:
-  description: >
-    Apache Logging Services Jenkins pipelines and shared libraries.
+  description: 'Apache Logging Services Jenkins pipelines and shared libraries.'
   homepage: https://ci-builds.apache.org/job/Logging/
   labels:
     - apache
