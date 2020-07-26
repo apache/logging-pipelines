@@ -46,16 +46,16 @@ pipeline {
     environment {
         LANG = 'C.UTF-8'
     }
+    libraries {
+        // https://www.jenkins.io/doc/book/pipeline/shared-libraries/
+        // shared library reference to vars/
+        lib 'logging'
+    }
     stages {
         stage('Build') {
             steps {
-                // https://issues.jenkins-ci.org/browse/JENKINS-43353
-                script {
-                    def buildNumber = BUILD_NUMBER as int
-                    if (buildNumber > 1) milestone(buildNumber - 1)
-                    milestone(buildNumber)
-                }
-                runMaven '-DskipTests clean install'
+                cancelPreviousRunningBuilds()
+                mvn '-DskipTests clean install'
             }
         }
         stage('Test') {
@@ -63,7 +63,7 @@ pipeline {
             parallel {
                 stage('Ubuntu') {
                     steps {
-                        runMaven '-Dmaven.test.failure.ignore=true verify'
+                        mvn '-Dmaven.test.failure.ignore=true verify'
                     }
                     post {
                         always {
@@ -89,7 +89,7 @@ pipeline {
                         // note that previous test runs of log4j-mongodb* may have left behind an embedded mongo folder
                         // also note that we don't need to use the jenkins system property here as it's ubuntu-specific
                         bat 'if exist %userprofile%\\.embedmongo\\ rd /s /q %userprofile%\\.embedmongo'
-                        runMaven '-Dmaven.test.failure.ignore=true verify'
+                        mvn '-Dmaven.test.failure.ignore=true verify'
                     }
                     post {
                         always {
@@ -109,7 +109,7 @@ pipeline {
                 }
             }
             steps {
-                runMaven 'deploy'
+                mvn 'deploy'
             }
         }
     }
@@ -125,24 +125,6 @@ pipeline {
                 from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
                 subject: "[CI][FAILURE] ${env.JOB_NAME}#${env.BUILD_NUMBER} has potential issues",
                 body: '${SCRIPT, template="groovy-text.template"}'
-        }
-    }
-}
-
-def runMaven(String args) {
-    if (isUnix()) {
-        configFileProvider([configFile(fileId: 'ubuntu', variable: 'TOOLCHAINS')]) {
-            withEnv(['JAVA_HOME=/home/jenkins/tools/java/latest1.8']) {
-                // note that the jenkins system property is set here to activate certain pom properties in
-                // some log4j modules that compile against system jars (e.g., log4j-jmx-gui)
-                sh "./mvnw --toolchains \"\$TOOLCHAINS\" -Djenkins ${args}"
-            }
-        }
-    } else {
-        configFileProvider([configFile(fileId: 'windows', variable: 'TOOLCHAINS')]) {
-            withEnv(['JAVA_HOME=f:\\jenkins\\tools\\java\\latest1.8']) {
-                bat ".\\mvnw.cmd --toolchains \"%TOOLCHAINS%\" ${args}"
-            }
         }
     }
 }
