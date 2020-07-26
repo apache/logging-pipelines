@@ -72,7 +72,7 @@ pipeline {
             parallel {
                 stage('Ubuntu') {
                     steps {
-                        sh 'mvn --fail-at-end --toolchains toolchains-jenkins-ubuntu.xml -Djenkins verify'
+                        sh 'mvn --toolchains toolchains-jenkins-ubuntu.xml -Djenkins -Dmaven.test.failure.ignore=true verify'
                     }
                     post {
                         always {
@@ -94,12 +94,18 @@ pipeline {
                         // https://cwiki.apache.org/confluence/display/INFRA/Jenkins+node+labels
                         label 'Windows'
                     }
+                    tools {
+                        // https://cwiki.apache.org/confluence/display/INFRA/JDK+Installation+Matrix
+                        jdk 'JDK 1.8 (latest)'
+                        // https://cwiki.apache.org/confluence/display/INFRA/Maven+Installation+Matrix
+                        maven 'Maven 3 (latest)'
+                    }
                     steps {
                         // note that previous test runs of log4j-mongodb* may have left behind an embedded mongo folder
                         // also note that we don't need to use the jenkins system property here as it's ubuntu-specific
                         bat '''
                     if exist %userprofile%\\.embedmongo\\ rd /s /q %userprofile%\\.embedmongo
-                    mvn --show-version --fail-at-end --toolchains toolchains-jenkins-win.xml clean install
+                    mvn --toolchains toolchains-jenkins-win.xml -Dmaven.test.failure.ignore=true clean install
                     '''
                     }
                     post {
