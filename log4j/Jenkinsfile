@@ -43,6 +43,10 @@ pipeline {
         // https://cwiki.apache.org/confluence/display/INFRA/Jenkins+node+labels
         label 'ubuntu'
     }
+    tools {
+        // https://cwiki.apache.org/confluence/display/INFRA/JDK+Installation+Matrix
+        jdk 'JDK 1.8 (latest)'
+    }
     environment {
         LANG = 'C.UTF-8'
     }
