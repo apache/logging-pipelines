@@ -43,10 +43,6 @@ pipeline {
         // https://cwiki.apache.org/confluence/display/INFRA/Jenkins+node+labels
         label 'ubuntu'
     }
-    tools {
-        // https://cwiki.apache.org/confluence/display/INFRA/JDK+Installation+Matrix
-        jdk 'JDK 1.8 (latest)'
-    }
     environment {
         LANG = 'C.UTF-8'
     }
@@ -88,10 +84,6 @@ pipeline {
                     agent {
                         // https://cwiki.apache.org/confluence/display/INFRA/Jenkins+node+labels
                         label 'Windows'
-                    }
-                    tools {
-                        // https://cwiki.apache.org/confluence/display/INFRA/JDK+Installation+Matrix
-                        jdk 'JDK 1.8 (latest)'
                     }
                     steps {
                         // note that previous test runs of log4j-mongodb* may have left behind an embedded mongo folder
@@ -140,13 +132,17 @@ pipeline {
 def runMaven(String args) {
     if (isUnix()) {
         configFileProvider([configFile(fileId: 'ubuntu', variable: 'TOOLCHAINS')]) {
-            // note that the jenkins system property is set here to activate certain pom properties in
-            // some log4j modules that compile against system jars (e.g., log4j-jmx-gui)
-            sh "./mvnw --toolchains \"\$TOOLCHAINS\" -Djenkins ${args}"
+            withEnv(['JAVA_HOME=/home/jenkins/tools/java/latest1.8']) {
+                // note that the jenkins system property is set here to activate certain pom properties in
+                // some log4j modules that compile against system jars (e.g., log4j-jmx-gui)
+                sh "./mvnw --toolchains \"\$TOOLCHAINS\" -Djenkins ${args}"
+            }
         }
     } else {
         configFileProvider([configFile(fileId: 'windows', variable: 'TOOLCHAINS')]) {
-            bat ".\\mvnw.cmd --toolchains \"%TOOLCHAINS%\" ${args}"
+            withEnv(['JAVA_HOME=f:\\jenkins\\tools\\java\\latest1.8']) {
+                bat ".\\mvnw.cmd --toolchains \"%TOOLCHAINS%\" ${args}"
+            }
         }
     }
 }
