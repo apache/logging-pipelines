@@ -89,6 +89,10 @@ pipeline {
                         // https://cwiki.apache.org/confluence/display/INFRA/Jenkins+node+labels
                         label 'Windows'
                     }
+                    tools {
+                        // https://cwiki.apache.org/confluence/display/INFRA/JDK+Installation+Matrix
+                        jdk 'JDK 1.8 (latest)'
+                    }
                     steps {
                         // note that previous test runs of log4j-mongodb* may have left behind an embedded mongo folder
                         // also note that we don't need to use the jenkins system property here as it's ubuntu-specific
