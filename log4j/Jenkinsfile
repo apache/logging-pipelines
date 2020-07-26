@@ -37,7 +37,6 @@ pipeline {
         // TODO: this can be removed once gitbox webhooks are re-enabled
         pollSCM 'H/5 * * * *'
     }
-
     // https://jenkins.io/doc/book/pipeline/syntax/#agent
     agent {
         // https://cwiki.apache.org/confluence/display/INFRA/Jenkins+node+labels
@@ -46,8 +45,8 @@ pipeline {
     environment {
         LANG = 'C.UTF-8'
     }
+    // https://www.jenkins.io/doc/book/pipeline/shared-libraries/
     libraries {
-        // https://www.jenkins.io/doc/book/pipeline/shared-libraries/
         // shared library reference to vars/
         lib 'logging'
     }
@@ -111,20 +110,14 @@ pipeline {
             steps {
                 mvn '-DskipTests deploy'
             }
-        }
-    }
-    post {
-        fixed {
-            emailext to: 'notifications@logging.apache.org',
-                from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
-                subject: "[CI][SUCCESS] ${env.JOB_NAME}#${env.BUILD_NUMBER} back to normal",
-                body: '${SCRIPT, template="groovy-text.template"}'
-        }
-        failure {
-            emailext to: 'notifications@logging.apache.org',
-                from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
-                subject: "[CI][FAILURE] ${env.JOB_NAME}#${env.BUILD_NUMBER} has potential issues",
-                body: '${SCRIPT, template="groovy-text.template"}'
+            post {
+                fixed {
+                    notifyBuildFixed()
+                }
+                failure {
+                    notifyBuildFailed()
+                }
+            }
         }
     }
 }

@@ -17,13 +17,6 @@
  */
 
 pipeline {
-    agent {
-        label 'ubuntu'
-    }
-    tools {
-        maven 'Maven 3 (latest)'
-        jdk 'JDK 1.8 (latest)'
-    }
     options {
         ansiColor 'xterm'
         buildDiscarder logRotator(numToKeepStr: '25')
@@ -33,16 +26,44 @@ pipeline {
         // TODO: this can be removed once gitbox webhooks are re-enabled
         pollSCM '@hourly'
     }
+    agent {
+        label 'ubuntu'
+    }
+    libraries {
+        lib 'logging'
+    }
     stages {
         stage('Build') {
             steps {
-                // https://issues.jenkins-ci.org/browse/JENKINS-43353
-                script {
-                    def buildNumber = BUILD_NUMBER as int
-                    if (buildNumber > 1) milestone(buildNumber - 1)
-                    milestone(buildNumber)
+                cancelPreviousRunningBuilds()
+                mvn '-DskipTests clean install'
+            }
+        }
+        stage('Test') {
+            parallel {
+                stage('Ubuntu') {
+                    steps {
+                        mvn '-Dmaven.test.failure.ignore=true verify'
+                    }
+                    post {
+                        always {
+                            junit '**/*-reports/*.xml'
+                        }
+                    }
                 }
-                sh 'mvn install'
+                stage('Windows') {
+                    agent {
+                        label 'Windows'
+                    }
+                    steps {
+                        mvn '-Dmaven.test.failure.ignore=true verify'
+                    }
+                    post {
+                        always {
+                            junit '**/*-reports/*.xml'
+                        }
+                    }
+                }
             }
         }
         stage('Deploy') {
@@ -50,20 +71,14 @@ pipeline {
                 branch 'master'
             }
             steps {
-                sh 'mvn deploy'
+                mvn '-DskipTests deploy'
             }
             post {
                 fixed {
-                    emailext to: 'notifications@logging.apache.org',
-                        from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
-                        subject: "[CI][SUCCESS] ${env.JOB_NAME}#${env.BUILD_NUMBER} back to normal",
-                        body: '${SCRIPT, template="groovy-text.template"}'
+                    notifyBuildFixed()
                 }
                 failure {
-                    emailext to: 'notifications@logging.apache.org',
-                        from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
-                        subject: "[CI][FAILURE] ${env.JOB_NAME}#${env.BUILD_NUMBER} has potential issues",
-                        body: '${SCRIPT, template="groovy-text.template"}'
+                    notifyBuildFailed()
                 }
             }
         }

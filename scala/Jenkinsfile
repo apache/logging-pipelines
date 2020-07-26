@@ -17,12 +17,6 @@
  */
 
 pipeline {
-    agent {
-        label 'ubuntu'
-    }
-    tools {
-        jdk 'JDK 1.8 (latest)'
-    }
     options {
         ansiColor 'xterm'
         buildDiscarder logRotator(numToKeepStr: '25')
@@ -32,30 +26,36 @@ pipeline {
         // TODO: this can be removed once gitbox webhooks are re-enabled
         pollSCM '@hourly'
     }
+    agent {
+        label 'ubuntu'
+    }
+    libraries {
+        lib 'logging'
+    }
+    tools {
+        jdk 'JDK 1.8 (latest)'
+    }
     stages {
         stage('Build') {
             steps {
-                // https://issues.jenkins-ci.org/browse/JENKINS-43353
-                script {
-                    def buildNumber = BUILD_NUMBER as int
-                    if (buildNumber > 1) milestone(buildNumber - 1)
-                    milestone(buildNumber)
-                }
-                sh './sbt -batch auditCheck'
-                sh './sbt -batch "+ compile"'
+                cancelPreviousRunningBuilds()
+                sh '''
+                ./sbt -batch auditCheck
+                ./sbt -batch "+ compile"
+                '''
             }
         }
         stage('Test') {
             steps {
-                sh './sbt -batch Test/auditCheck'
-                sh './sbt -batch "+ test"'
+                sh '''
+                ./sbt -batch Test/auditCheck
+                ./sbt -batch "+ test"
+                '''
             }
         }
         stage('Deploy') {
             when {
-                anyOf {
-                    branch 'master'
-                }
+                branch 'master'
             }
             environment {
                 NEXUS = credentials('logging-snapshots')
@@ -65,16 +65,10 @@ pipeline {
             }
             post {
                 fixed {
-                    emailext to: 'notifications@logging.apache.org',
-                        from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
-                        subject: "[CI][SUCCESS] ${env.JOB_NAME}#${env.BUILD_NUMBER} back to normal",
-                        body: '${SCRIPT, template="groovy-text.template"}'
+                    notifyBuildFixed()
                 }
                 failure {
-                    emailext to: 'notifications@logging.apache.org',
-                        from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
-                        subject: "[CI][FAILURE] ${env.JOB_NAME}#${env.BUILD_NUMBER} has potential issues",
-                        body: '${SCRIPT, template="groovy-text.template"}'
+                    notifyBuildFailed()
                 }
             }
         }

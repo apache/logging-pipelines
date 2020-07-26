@@ -19,13 +19,6 @@
  */
 
 pipeline {
-    agent {
-        label 'ubuntu'
-    }
-    tools {
-        maven 'Maven 3 (latest)'
-        jdk 'JDK 1.8 (latest)'
-    }
     options {
         ansiColor 'xterm'
         buildDiscarder logRotator(numToKeepStr: '10')
@@ -35,28 +28,28 @@ pipeline {
         // TODO: this can be removed once gitbox webhooks are re-enabled
         pollSCM '@hourly'
     }
+    agent {
+        label 'ubuntu'
+    }
+    libraries {
+        lib 'logging'
+    }
     stages {
         stage('Deploy') {
             when {
                 branch 'master'
             }
             steps {
-                sh 'mvn deploy'
+                mvn 'deploy'
             }
-        }
-    }
-    post {
-        fixed {
-            emailext to: 'notifications@logging.apache.org',
-                from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
-                subject: "[CI][SUCCESS] ${env.JOB_NAME}#${env.BUILD_NUMBER} back to normal",
-                body: '${SCRIPT, template="groovy-text.template"}'
-        }
-        failure {
-            emailext to: 'notifications@logging.apache.org',
-                from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
-                subject: "[CI][FAILURE] ${env.JOB_NAME}#${env.BUILD_NUMBER} has potential issues",
-                body: '${SCRIPT, template="groovy-text.template"}'
+            post {
+                fixed {
+                    notifyBuildFixed()
+                }
+                failure {
+                    notifyBuildFailed()
+                }
+            }
         }
     }
 }

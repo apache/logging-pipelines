@@ -19,12 +19,6 @@
  */
 
 pipeline {
-    agent {
-        label 'ubuntu'
-    }
-    libraries {
-        lib 'logging'
-    }
     options {
         ansiColor 'xterm'
         buildDiscarder logRotator(numToKeepStr: '25')
@@ -34,13 +28,23 @@ pipeline {
         // TODO: this can be removed once gitbox webhooks are re-enabled
         pollSCM '@hourly'
     }
+    agent {
+        label 'ubuntu'
+    }
+    libraries {
+        lib 'logging'
+    }
     stages {
         stage('Build') {
             steps {
                 cancelPreviousRunningBuilds()
                 mvn '-Pdevelopment site:site'
                 mvn '-Pdevelopment install'
-                junit '**/target/surefire-reports/*.xml'
+            }
+            post {
+                always {
+                    junit '**/target/*-reports/*.xml'
+                }
             }
         }
         stage('Deploy') {
@@ -52,16 +56,10 @@ pipeline {
             }
             post {
                 fixed {
-                    emailext to: 'notifications@logging.apache.org',
-                        from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
-                        subject: "[CI][SUCCESS] ${env.JOB_NAME}#${env.BUILD_NUMBER} back to normal",
-                        body: '${SCRIPT, template="groovy-text.template"}'
+                    notifyBuildFixed()
                 }
                 failure {
-                    emailext to: 'notifications@logging.apache.org',
-                        from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
-                        subject: "[CI][FAILURE] ${env.JOB_NAME}#${env.BUILD_NUMBER} has potential issues",
-                        body: '${SCRIPT, template="groovy-text.template"}'
+                    notifyBuildFailed()
                 }
             }
         }
