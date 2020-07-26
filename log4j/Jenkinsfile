@@ -43,13 +43,6 @@ pipeline {
         // https://cwiki.apache.org/confluence/display/INFRA/Jenkins+node+labels
         label 'ubuntu'
     }
-    // https://jenkins.io/doc/book/pipeline/syntax/#tools
-    tools {
-        // https://cwiki.apache.org/confluence/display/INFRA/JDK+Installation+Matrix
-        jdk 'JDK 1.8 (latest)'
-        // https://cwiki.apache.org/confluence/display/INFRA/Maven+Installation+Matrix
-        maven 'Maven 3 (latest)'
-    }
     environment {
         LANG = 'C.UTF-8'
     }
@@ -62,9 +55,7 @@ pipeline {
                     if (buildNumber > 1) milestone(buildNumber - 1)
                     milestone(buildNumber)
                 }
-                // note that the jenkins system property is set here to activate certain pom properties in
-                // some log4j modules that compile against system jars (e.g., log4j-jmx-gui)
-                sh 'mvn --show-version --toolchains toolchains-jenkins-ubuntu.xml -Djenkins clean install -DskipTests'
+                runMaven '-DskipTests clean install'
             }
         }
         stage('Test') {
@@ -72,7 +63,7 @@ pipeline {
             parallel {
                 stage('Ubuntu') {
                     steps {
-                        sh 'mvn --toolchains toolchains-jenkins-ubuntu.xml -Djenkins -Dmaven.test.failure.ignore=true verify'
+                        runMaven '-Dmaven.test.failure.ignore=true verify'
                     }
                     post {
                         always {
@@ -94,19 +85,11 @@ pipeline {
                         // https://cwiki.apache.org/confluence/display/INFRA/Jenkins+node+labels
                         label 'Windows'
                     }
-                    tools {
-                        // https://cwiki.apache.org/confluence/display/INFRA/JDK+Installation+Matrix
-                        jdk 'JDK 1.8 (latest)'
-                        // https://cwiki.apache.org/confluence/display/INFRA/Maven+Installation+Matrix
-                        maven 'Maven 3 (latest)'
-                    }
                     steps {
                         // note that previous test runs of log4j-mongodb* may have left behind an embedded mongo folder
                         // also note that we don't need to use the jenkins system property here as it's ubuntu-specific
-                        bat '''
-                    if exist %userprofile%\\.embedmongo\\ rd /s /q %userprofile%\\.embedmongo
-                    mvn --toolchains toolchains-jenkins-win.xml -Dmaven.test.failure.ignore=true clean install
-                    '''
+                        bat 'if exist %userprofile%\\.embedmongo\\ rd /s /q %userprofile%\\.embedmongo'
+                        runMaven '-Dmaven.test.failure.ignore=true verify'
                     }
                     post {
                         always {
@@ -126,7 +109,7 @@ pipeline {
                 }
             }
             steps {
-                sh 'mvn --toolchains toolchains-jenkins-ubuntu.xml -Djenkins deploy'
+                runMaven 'deploy'
             }
         }
     }
@@ -142,6 +125,20 @@ pipeline {
                 from: 'Mr. Jenkins <jenkins@ci-builds.apache.org>',
                 subject: "[CI][FAILURE] ${env.JOB_NAME}#${env.BUILD_NUMBER} has potential issues",
                 body: '${SCRIPT, template="groovy-text.template"}'
+        }
+    }
+}
+
+def runMaven(String args) {
+    if (isUnix()) {
+        configFileProvider([configFile(fileId: 'ubuntu', variable: 'TOOLCHAINS')]) {
+            // note that the jenkins system property is set here to activate certain pom properties in
+            // some log4j modules that compile against system jars (e.g., log4j-jmx-gui)
+            sh "./mvnw --toolchains \"\$TOOLCHAINS\" -Djenkins ${args}"
+        }
+    } else {
+        configFileProvider([configFile(fileId: 'windows', variable: 'TOOLCHAINS')]) {
+            bat ".\\mvnw.cmd --toolchains \"%TOOLCHAINS%\" ${args}"
         }
     }
 }
