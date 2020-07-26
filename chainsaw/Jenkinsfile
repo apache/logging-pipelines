@@ -22,9 +22,8 @@ pipeline {
     agent {
         label 'ubuntu'
     }
-    tools {
-        maven 'Maven 3 (latest)'
-        jdk 'JDK 1.8 (latest)'
+    libraries {
+        lib 'logging'
     }
     options {
         ansiColor 'xterm'
@@ -38,16 +37,9 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                // https://issues.jenkins-ci.org/browse/JENKINS-43353
-                script {
-                    def buildNumber = BUILD_NUMBER as int
-                    if (buildNumber > 1) milestone(buildNumber - 1)
-                    milestone(buildNumber)
-                }
-                sh '''
-                mvn -Pdevelopment site:site
-                mvn -Pdevelopment install
-                '''
+                cancelPreviousRunningBuilds()
+                mvn '-Pdevelopment site:site'
+                mvn '-Pdevelopment install'
                 junit '**/target/surefire-reports/*.xml'
             }
         }
@@ -56,7 +48,7 @@ pipeline {
                 branch 'master'
             }
             steps {
-                sh 'mvn -Pdevelopment deploy'
+                mvn '-Pdevelopment -DskipTests deploy'
             }
             post {
                 fixed {
