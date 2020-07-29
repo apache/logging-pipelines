@@ -33,10 +33,6 @@ pipeline {
         // fail parallel stages as soon as any of them fail
         parallelsAlwaysFailFast()
     }
-    triggers {
-        // TODO: this can be removed once gitbox webhooks are re-enabled
-        pollSCM 'H/5 * * * *'
-    }
     // https://jenkins.io/doc/book/pipeline/syntax/#agent
     agent {
         // https://cwiki.apache.org/confluence/display/INFRA/Jenkins+node+labels

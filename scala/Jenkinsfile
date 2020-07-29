@@ -22,10 +22,6 @@ pipeline {
         buildDiscarder logRotator(numToKeepStr: '25')
         timeout time: 1, unit: 'HOURS'
     }
-    triggers {
-        // TODO: this can be removed once gitbox webhooks are re-enabled
-        pollSCM '@hourly'
-    }
     agent {
         label 'ubuntu'
     }
