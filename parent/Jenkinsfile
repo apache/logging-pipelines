@@ -35,6 +35,11 @@ pipeline {
         lib 'logging'
     }
     stages {
+        stage('Verifying') {
+            steps {
+                mvn 'verify'
+            }
+        }
         stage('Deploy') {
             when {
                 branch 'master'
