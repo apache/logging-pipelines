@@ -59,20 +59,17 @@ pipeline {
                 stage('Ubuntu') {
                     steps {
                         mvn '-Dmaven.test.failure.ignore=true verify'
-                    }
-                    post {
-                        always {
-                            // record linux run of tests
-                            junit '**/*-reports/*.xml'
-                            // additional warnings generated during build
-                            // TODO: would be nice to be able to include checkstyle, cpd, pmd, and spotbugs,
-                            //       but current site build takes too long
-                            recordIssues enabledForFailure: true,
-                                    sourceCodeEncoding: 'UTF-8',
-                                    referenceJobName: 'log4j/master',
-                                    tools: [mavenConsole(), errorProne(), java(),
-                                            taskScanner(highTags: 'FIXME', normalTags: 'TODO', includePattern: '**/*.java', excludePattern: '*/target/**')]
-                        }
+                        // TODO: would be nice to be able to include checkstyle, cpd, pmd, and spotbugs,
+                        //       but current site build takes too long
+                        recordIssues sourceCodeEncoding: 'UTF-8',
+                                referenceJobName: 'log4j/master',
+                                tools: [
+                                    junitParser(id: 'LinuxTests', pattern: '**/target/*-reports/TEST-*.xml', reportEncoding: 'UTF-8'),
+                                    mavenConsole(),
+                                    errorProne(),
+                                    java(),
+                                    taskScanner(highTags: 'FIXME', normalTags: 'TODO', includePattern: '**/*.java', excludePattern: '*/target/**')
+                                ]
                     }
                 }
                 stage('Windows') {
@@ -85,12 +82,9 @@ pipeline {
                         // also note that we don't need to use the jenkins system property here as it's ubuntu-specific
                         bat 'if exist %userprofile%\\.embedmongo\\ rd /s /q %userprofile%\\.embedmongo'
                         mvn '-Dmaven.test.failure.ignore=true verify'
-                    }
-                    post {
-                        always {
-                            // record windows run of tests
-                            junit '**/*-reports/*.xml'
-                        }
+                        recordIssues sourceCodeEncoding: 'UTF-8',
+                                referenceJobName: 'log4j/master',
+                                tools: [junitParser(id: 'WindowsTests', pattern: '**/target/*-reports/TEST-*.xml', reportEncoding: 'UTF-8')]
                     }
                 }
             }
