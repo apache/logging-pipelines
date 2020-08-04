@@ -62,9 +62,8 @@ pipeline {
                         // TODO: would be nice to be able to include checkstyle, cpd, pmd, and spotbugs,
                         //       but current site build takes too long
                         recordIssues sourceCodeEncoding: 'UTF-8',
-                                referenceJobName: 'log4j/master',
                                 tools: [
-                                    junitParser(id: 'LinuxTests', pattern: '**/target/*-reports/TEST-*.xml', reportEncoding: 'UTF-8'),
+                                    junitParser(id: 'linux', name: 'Linux Tests', pattern: '**/target/*-reports/TEST-*.xml', reportEncoding: 'UTF-8'),
                                     mavenConsole(),
                                     errorProne(),
                                     java(),
@@ -83,8 +82,7 @@ pipeline {
                         bat 'if exist %userprofile%\\.embedmongo\\ rd /s /q %userprofile%\\.embedmongo'
                         mvn '-Dmaven.test.failure.ignore=true verify'
                         recordIssues sourceCodeEncoding: 'UTF-8',
-                                referenceJobName: 'log4j/master',
-                                tools: [junitParser(id: 'WindowsTests', pattern: '**/target/*-reports/TEST-*.xml', reportEncoding: 'UTF-8')]
+                                tools: [junitParser(id: 'windows', name: 'Windows Tests', pattern: '**/target/*-reports/TEST-*.xml', reportEncoding: 'UTF-8')]
                     }
                 }
             }
