@@ -59,11 +59,11 @@ pipeline {
                 stage('Ubuntu') {
                     steps {
                         mvn '-Dmaven.test.failure.ignore=true verify'
+                        junit '**/target/*-reports/TEST-*.xml'
                         // TODO: would be nice to be able to include checkstyle, cpd, pmd, and spotbugs,
                         //       but current site build takes too long
                         recordIssues sourceCodeEncoding: 'UTF-8',
                                 tools: [
-                                    junitParser(id: 'linux', name: 'Linux Tests', pattern: '**/target/*-reports/TEST-*.xml', reportEncoding: 'UTF-8'),
                                     mavenConsole(),
                                     errorProne(),
                                     java(),
@@ -81,8 +81,7 @@ pipeline {
                         // also note that we don't need to use the jenkins system property here as it's ubuntu-specific
                         bat 'if exist %userprofile%\\.embedmongo\\ rd /s /q %userprofile%\\.embedmongo'
                         mvn '-Dmaven.test.failure.ignore=true verify'
-                        recordIssues sourceCodeEncoding: 'UTF-8',
-                                tools: [junitParser(id: 'windows', name: 'Windows Tests', pattern: '**/target/*-reports/TEST-*.xml', reportEncoding: 'UTF-8')]
+                        junit '**/target/*-reports/TEST-*.xml'
                     }
                 }
             }
