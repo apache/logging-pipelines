@@ -96,6 +96,7 @@ pipeline {
             }
             steps {
                 mvn '-DskipTests deploy'
+                archiveArtifacts artifacts: '**/target/log4j-*.jar', followSymlinks: false
             }
             post {
                 fixed {
