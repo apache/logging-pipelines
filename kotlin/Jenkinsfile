@@ -73,6 +73,9 @@ pipeline {
                 fixed {
                     notifyBuildFixed()
                 }
+                unstable {
+                    notifyBuildUnstable()
+                }
                 failure {
                     notifyBuildFailed()
                 }
