@@ -101,6 +101,9 @@ pipeline {
                 fixed {
                     notifyBuildFixed()
                 }
+                regression {
+                    notifyBuildFailed()
+                }
                 failure {
                     notifyBuildFailed()
                 }
