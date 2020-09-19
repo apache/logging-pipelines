@@ -58,15 +58,14 @@ pipeline {
             parallel {
                 stage('Ubuntu') {
                     steps {
-                        mvn '-Dmaven.test.failure.ignore=true verify'
+                        mvn '-Dmaven.test.failure.ignore=true verify spotbugs:spotbugs'
                         junit '**/target/*-reports/TEST-*.xml'
-                        // TODO: would be nice to be able to include checkstyle, cpd, pmd, and spotbugs,
-                        //       but current site build takes too long
+                        // TODO: would be nice to be able to include checkstyle, cpd, and pmd
                         recordIssues sourceCodeEncoding: 'UTF-8',
                                 tools: [
                                     mavenConsole(),
                                     errorProne(),
-                                    java(),
+                                    spotBugs(),
                                     taskScanner(highTags: 'FIXME', normalTags: 'TODO', includePattern: '**/*.java', excludePattern: '*/target/**')
                                 ]
                     }
