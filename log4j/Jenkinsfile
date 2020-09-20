@@ -58,7 +58,7 @@ pipeline {
             parallel {
                 stage('Ubuntu') {
                     steps {
-                        mvn '-Dmaven.test.failure.ignore=true verify spotbugs:spotbugs'
+                        mvn '-Dmaven.test.failure.ignore=true verify com.github.spotbugs:spotbugs-maven-plugin:spotbugs'
                         junit '**/target/*-reports/TEST-*.xml'
                         // TODO: would be nice to be able to include checkstyle, cpd, and pmd
                         recordIssues sourceCodeEncoding: 'UTF-8',
