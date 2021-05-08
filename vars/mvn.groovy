@@ -18,8 +18,10 @@
 def call(String args) {
     String mavenHome = tool 'maven_3_latest'
     String javaVersion = '1.8'
-    if (env.JOB_NAME == 'log4j' && env.BRANCH_NAME == 'master') {
+    if (env.JOB_NAME == 'Logging/log4j' && env.BRANCH_NAME == 'master') {
         javaVersion = '11'
+    } else if (env.JOB_NAME == 'Logging/chainsaw') {
+        javaVersion = '9'
     }
     String javaHome = tool "jdk_${javaVersion}_latest"
     if (isUnix()) {
