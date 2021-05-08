@@ -19,13 +19,13 @@ def call(String args) {
     String mavenHome = tool 'maven_3_latest'
     String javaVersion = '1.8'
     boolean useToolchains = false
-    if (env.JOB_NAME.startsWith 'Logging/log4j/') {
+    if (env.JOB_NAME.startsWith('Logging/log4j/')) {
         if (env.BRANCH_NAME == 'release-2.x' || env.CHANGE_TARGET == 'release-2.x') {
             useToolchains = true
         } else if (env.BRANCH_NAME == 'master' || env.CHANGE_TARGET == 'master') {
             javaVersion = '11'
         }
-    } else if (env.JOB_NAME.startsWith 'Logging/chainsaw') {
+    } else if (env.JOB_NAME.startsWith('Logging/chainsaw')) {
         javaVersion = '9'
     }
     String javaHome = tool "jdk_${javaVersion}_latest"
