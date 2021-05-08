@@ -26,7 +26,7 @@ def call(String args) {
             javaVersion = '11'
         }
     } else if (env.JOB_NAME.startsWith('Logging/chainsaw')) {
-        javaVersion = '9'
+        javaVersion = '11'
     }
     String javaHome = tool "jdk_${javaVersion}_latest"
     if (isUnix()) {
