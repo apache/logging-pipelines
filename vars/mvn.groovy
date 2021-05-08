@@ -16,25 +16,19 @@
  */
 
 def call(String args) {
-    if (isUnix()) {
-        String javaHome = "/home/jenkins/tools/java/latest${BRANCH_NAME == 'master' ? '11' : '1.8'}"
-        configFileProvider([configFile(fileId: 'ubuntu', variable: 'TOOLCHAINS')]) {
-            withEnv([
-                "JAVA_HOME=${javaHome}",
-                "PATH+MAVEN=/home/jenkins/tools/maven/latest3/bin:${javaHome}/bin"
-            ]) {
+    String javaVersion = '1.8'
+    if (env.JOB_NAME == 'log4j' && env.BRANCH_NAME == 'master') {
+        javaVersion = '11'
+    }
+    withMaven(jdk: "jdk_${javaVersion}_latest", maven: 'maven_3_latest') {
+        if (isUnix()) {
+            configFileProvider([configFile(fileId: 'ubuntu', variable: 'TOOLCHAINS')]) {
                 // note that the jenkins system property is set here to activate certain pom properties in
                 // some log4j modules that compile against system jars (e.g., log4j-jmx-gui)
                 sh "mvn --toolchains \"\$TOOLCHAINS\" -Djenkins ${args}"
             }
-        }
-    } else {
-        String javaHome = "f:\\jenkins\\tools\\java\\latest${BRANCH_NAME == 'master' ? '11' : '1.8'}"
-        configFileProvider([configFile(fileId: 'windows', variable: 'TOOLCHAINS')]) {
-            withEnv([
-                "JAVA_HOME=${javaHome}",
-                "PATH+MAVEN=f:\\jenkins\\tools\\maven\\latest3\\bin;${javaHome}\\bin"
-            ]) {
+        } else {
+            configFileProvider([configFile(fileId: 'windows', variable: 'TOOLCHAINS')]) {
                 bat "mvn --toolchains \"%TOOLCHAINS%\" ${args}"
             }
         }
