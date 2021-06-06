@@ -34,9 +34,6 @@ pipeline {
         jdk 'jdk_1.8_latest'
         maven 'maven_3_latest'
     }
-    environment {
-        PROJECT_VERSION = "${sh(returnStdout: true, script: 'mvn help:evaluate -Dexpression=project.version -q -DforceStdout')}"
-    }
     stages {
         stage('Build') {
             steps {
@@ -56,7 +53,7 @@ pipeline {
             when {
                 allOf {
                     branch 'master'
-                    expression { env.PROJECT_VERSION.endsWith('-SNAPSHOT') }
+                    expression { sh(returnStdout: true, script: 'mvn help:evaluate -Dexpression=project.version -q -DforceStdout').endsWith('-SNAPSHOT') }
                 }
             }
             steps {
