@@ -30,12 +30,21 @@ pipeline {
     libraries {
         lib 'logging'
     }
+    tools {
+        jdk 'jdk_8_latest'
+        maven 'maven_3_latest'
+    }
+    environment {
+        PROJECT_VERSION = "${sh(returnStdout: true, script: 'mvn help:evaluate -Dexpression=project.version -q -DforceStdout')}"
+    }
     stages {
         stage('Build') {
             steps {
                 cancelPreviousRunningBuilds()
-                mvn '-Pdevelopment site:site'
-                mvn '-Pdevelopment install'
+                sh '''
+                mvn -Pdevelopment site:site
+                mvn -Pdevelopment install
+                '''
             }
             post {
                 always {
@@ -45,10 +54,13 @@ pipeline {
         }
         stage('Deploy') {
             when {
-                branch 'master'
+                allOf {
+                    branch 'master'
+                    expression { env.PROJECT_VERSION.endsWith('-SNAPSHOT') }
+                }
             }
             steps {
-                mvn '-Pdevelopment -DskipTests deploy'
+                sh 'mvn -Pdevelopment -DskipTests deploy'
             }
             post {
                 fixed {
