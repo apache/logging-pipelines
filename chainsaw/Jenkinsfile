@@ -41,7 +41,9 @@ pipeline {
                 sh '''
                 mvn -Pdevelopment site:site
                 mvn -Pdevelopment install
+                mvn -Ppackaging site:site package
                 '''
+                archiveArtifacts artifacts: 'target/*.tar.gz', fingerprint: true
             }
             post {
                 always {
